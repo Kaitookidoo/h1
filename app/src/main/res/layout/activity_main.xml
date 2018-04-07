@@ -1,22 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.simcoder.uber.MainActivity"
+    android:background="@drawable/background"
+    tools:context="com.taxi.myapp.MainActivity"
     android:orientation="vertical">
 
 
-    <Button
-        android:layout_width="match_parent"
+    <TableRow
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="I'm a Driver"
-        android:id="@+id/driver"/>
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="I'm a Customer"
-        android:id="@+id/customer"/>
+        android:weightSum="2"
+        android:layout_alignParentBottom="true"
+        >
 
-</LinearLayout>
+
+        <Button
+            android:id="@+id/driver"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_gravity="left"
+            android:layout_marginBottom="36dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_toLeftOf="@id/customer"
+            android:layout_weight="1"
+            android:background="@drawable/register_button"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:text="Driver"
+            android:textColor="@color/white"
+            android:textStyle="normal" />
+
+
+        <Button
+            android:id="@+id/customer"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_gravity="right"
+            android:layout_marginBottom="36dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_toRightOf="@id/driver"
+            android:layout_weight="1"
+            android:background="@drawable/register_button"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:text="Customer"
+            android:textColor="@color/white"
+            android:textStyle="normal" />
+    </TableRow>
+
+</RelativeLayout>

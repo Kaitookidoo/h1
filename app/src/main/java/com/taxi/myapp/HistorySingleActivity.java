@@ -1,4 +1,4 @@
-package com.simcoder.uber;
+package com.taxi.myapp;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -192,6 +192,7 @@ public class HistorySingleActivity extends AppCompatActivity implements OnMapRea
             }
         });
     }
+
 
     private int PAYPAL_REQUEST_CODE = 1;
     private static PayPalConfiguration config = new PayPalConfiguration()

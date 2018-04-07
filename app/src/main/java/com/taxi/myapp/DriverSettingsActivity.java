@@ -1,15 +1,11 @@
-package com.simcoder.uber;
+package com.taxi.myapp;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -20,6 +16,7 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -32,7 +29,6 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
@@ -129,20 +125,20 @@ public class DriverSettingsActivity extends AppCompatActivity {
                     if(map.get("service")!=null){
                         mService = map.get("service").toString();
                         switch (mService){
-                            case"UberX":
-                                mRadioGroup.check(R.id.UberX);
+                            case"Mini":
+                                mRadioGroup.check(R.id.Mini);
                                 break;
-                            case"UberBlack":
-                                mRadioGroup.check(R.id.UberBlack);
+                            case"Micro":
+                                mRadioGroup.check(R.id.Micro);
                                 break;
-                            case"UberXl":
-                                mRadioGroup.check(R.id.UberXl);
+                            case"Prime":
+                                mRadioGroup.check(R.id.Prime);
                                 break;
                         }
                     }
                     if(map.get("profileImageUrl")!=null){
                         mProfileImageUrl = map.get("profileImageUrl").toString();
-                        Glide.with(getApplication()).load(mProfileImageUrl).into(mProfileImage);
+                        Glide.with(getApplication()).load(mProfileImageUrl).apply(RequestOptions.circleCropTransform()).into(mProfileImage);
                     }
                 }
             }

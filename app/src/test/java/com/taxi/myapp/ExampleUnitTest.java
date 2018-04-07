@@ -1,4 +1,4 @@
-package com.simcoder.uber;
+package com.taxi.myapp;
 
 import org.junit.Test;
 

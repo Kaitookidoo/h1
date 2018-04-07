@@ -1,25 +1,32 @@
-package com.simcoder.uber;
+package com.taxi.myapp;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.Context;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Looper;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,10 +39,11 @@ import com.directions.route.Routing;
 import com.directions.route.RoutingListener;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.ErrorCodes;
+import com.firebase.ui.auth.IdpResponse;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
@@ -50,15 +58,28 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.mikepenz.materialdrawer.AccountHeader;
+import com.mikepenz.materialdrawer.AccountHeaderBuilder;
+import com.mikepenz.materialdrawer.Drawer;
+import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.model.DividerDrawerItem;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.ProfileDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IProfile;
+import com.mikepenz.materialdrawer.util.AbstractDrawerImageLoader;
+import com.mikepenz.materialdrawer.util.DrawerImageLoader;
+import com.squareup.picasso.Picasso;
 
-import java.io.BufferedInputStream;
-import java.sql.Driver;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +92,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
     private FusedLocationProviderClient mFusedLocationClient;
 
+    Dialog myDialog;
 
     private Button mLogout, mSettings, mRideStatus, mHistory;
 
@@ -92,20 +114,77 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
     private TextView mCustomerName, mCustomerPhone, mCustomerDestination;
 
+
+    private static final int RC_SIGN_IN = 0;
+
+
+    Toolbar mToolbar;
+    FirebaseAuth mFirebaseAuth;
+    FirebaseUser mFirebaseUser;
+    Drawer mDrawerResult;
+    AccountHeader mHeaderResult;
+    ProfileDrawerItem mProfileDrawerItem;
+    PrimaryDrawerItem mItemLogin, mItemLogout, mItemVerifiedProfile, mItemHome, mItemSettings, mItemUnverifiedProfile, mCurrentProfile;
+
+    private static final String PP_URL = "https://iteritory.com/msadrud/install-or-setup-apache-ignite-in-windows-step-by-step-tutorial/";
+    private static final String TOS_URL = "https://iteritory.com/msadrud/install-or-setup-apache-ignite-in-windows-step-by-step-tutorial/";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_driver_map);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         polylines = new ArrayList<>();
+        DrawerImageLoader.init(new AbstractDrawerImageLoader() {
+            @Override
+            public void set(ImageView imageView, Uri uri, Drawable placeholder) {
+                super.set(imageView, uri, placeholder);
+                Picasso.with(imageView.getContext()).load(uri).placeholder(placeholder).into(imageView);
 
 
+            }
+
+
+
+            @Override
+            public void cancel(ImageView imageView) {
+
+                Picasso.with(imageView.getContext()).cancelRequest(imageView);
+            }
+            /*
+            @Override
+            public Drawable placeholder(Context ctx, String tag) {
+                //define different placeholders for different imageView targets
+                //default tags are accessible via the DrawerImageLoader.Tags
+                //custom ones can be checked via string. see the CustomUrlBasePrimaryDrawerItem LINE 111
+                if (DrawerImageLoader.Tags.PROFILE.name().equals(tag)) {
+                    return DrawerUIUtils.getPlaceHolder(ctx);
+                } else if (DrawerImageLoader.Tags.ACCOUNT_HEADER.name().equals(tag)) {
+                    return new IconicsDrawable(ctx).iconText(" ").backgroundColorRes(com.mikepenz.materialdrawer.R.color.primary).sizeDp(56);
+                } else if ("customUrlItem".equals(tag)) {
+                    return new IconicsDrawable(ctx).iconText(" ").backgroundColorRes(R.color.md_red_500).sizeDp(56);
+                }
+
+                //we use the default one for
+                //DrawerImageLoader.Tags.PROFILE_DRAWER_ITEM.name()
+
+                return super.placeholder(ctx, tag);
+            }*/
+        });
+
+        setupToolbar();
+
+        intstantiateUser();
+
+        instantiateMenuItems();
+        setupProfileDrawer();
+        setupNavigationDrawerWithHeader();
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-
+        myDialog = new Dialog(this);
 
         mCustomerInfo = (LinearLayout) findViewById(R.id.customerInfo);
 
@@ -185,7 +264,63 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         });
         getAssignedCustomer();
     }
+    public void ShowPopup(View v) {
+        TextView txtclose;
+        Button btnFollow;
+        final ListView listView;
+        final EditText editText;
+        final List<ChatModel> list_chat=new ArrayList<>();
+        FloatingActionButton btn_send_message;
+        myDialog.setContentView(R.layout.customercustompopup);
+        txtclose =(TextView) myDialog.findViewById(R.id.txtclose);
+        listView=(ListView)myDialog.findViewById(R.id.list_of_message);
+        editText=(EditText)myDialog.findViewById(R.id.user_message);
+        btn_send_message=(FloatingActionButton)myDialog.findViewById(R.id.fab);
+        txtclose.setText("M");
 
+        txtclose.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                myDialog.dismiss();
+            }
+        });
+        editText.setText("");
+        myDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        myDialog.show();
+        btn_send_message.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                DatabaseReference ref= FirebaseDatabase.getInstance().getReference().child("chat").child(customerId).push();
+                String text=editText.getText().toString();;
+                ChatModel model=new ChatModel(text,true);
+
+                editText.setText("");
+                ref.setValue(model);
+            }
+        });
+        DatabaseReference refDatabase=FirebaseDatabase.getInstance().getReference().child("chat").child(customerId);
+        refDatabase.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
+                ChatModel chat=dataSnapshot.getValue(ChatModel.class);
+                list_chat.add(chat);
+                CustomAdapterDriver adapter=new CustomAdapterDriver(list_chat,getApplicationContext());
+                listView.setAdapter(adapter);
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String prevChildKey) {}
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String prevChildKey) {}
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        });
+    }
     private void getAssignedCustomer(){
         String driverId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverId).child("customerRequest").child("customerRideId");
@@ -538,6 +673,212 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
             line.remove();
         }
         polylines.clear();
+    }
+    private void setupToolbar(){
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        mToolbar.setTitle("TAXI");
+
+
+    }
+
+    private void intstantiateUser(){
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        mFirebaseUser = mFirebaseAuth.getCurrentUser();
+    }
+
+    private boolean isUserSignedIn(){
+        if (mFirebaseUser == null){
+            return false;
+        }else{
+            return true;
+        }
+    }
+
+    private PrimaryDrawerItem checkCurrentProfileStatus(){
+        if (mFirebaseUser.isEmailVerified()){
+            mCurrentProfile = new PrimaryDrawerItem().withIdentifier(2).withName(R.string.verified_profile).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));;
+        }else{
+            mCurrentProfile = new PrimaryDrawerItem().withIdentifier(2).withName(R.string.unverified_profile).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        }
+        return mCurrentProfile;
+    }
+
+    private void instantiateMenuItems(){
+        mItemVerifiedProfile = new PrimaryDrawerItem().withIdentifier(1).withName(R.string.verified_profile).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        mItemUnverifiedProfile = new PrimaryDrawerItem().withIdentifier(2).withName(R.string.unverified_profile).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+
+        mItemLogin = new PrimaryDrawerItem().withIdentifier(3).withName(R.string.login_menu_item).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        mItemLogout = new PrimaryDrawerItem().withIdentifier(4).withName(R.string.logout_menu_item).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));;
+
+        mItemHome = new PrimaryDrawerItem().withIdentifier(5).withName(R.string.home).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        mItemSettings = new PrimaryDrawerItem().withIdentifier(6).withName(R.string.settings).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+    }
+
+    private void setupProfileDrawer() {
+        //check if the user is logged in. If logged in, get details (name, email, pic etc) dynamically
+        //For demonstration purpose, I have set a personal photo hard coded. In real-time, we can easily
+        // pass the actual photo dynamically.
+        if (mFirebaseUser != null) {
+            Uri xx = FirebaseAuth.getInstance().getCurrentUser().getPhotoUrl();
+            mProfileDrawerItem = new ProfileDrawerItem()
+                    .withName(mFirebaseUser.getDisplayName())
+                    .withEmail(mFirebaseUser.getEmail())
+                    .withIcon(xx);
+        } else {//else if the user is not logged in, show a default icon
+            mProfileDrawerItem = new ProfileDrawerItem()
+                    .withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        }
+    }
+
+    private AccountHeader setupAccountHeader(){
+        mHeaderResult = new AccountHeaderBuilder()
+                .withActivity(this)
+                .withHeaderBackground(R.drawable.header)
+                .addProfiles(mProfileDrawerItem)
+                .withOnAccountHeaderListener(new AccountHeader.OnAccountHeaderListener() {
+                    @Override
+                    public boolean onProfileChanged(View view, IProfile profile, boolean currentProfile) {
+                        return false;
+                    }
+                }).withSelectionListEnabledForSingleProfile(false)
+                .build();
+        return mHeaderResult;
+    }
+
+    private void setupNavigationDrawerWithHeader(){
+        //Depending on user is logged in or not, decide whether to show Log In menu or Log Out menu
+        if (!isUserSignedIn()){
+            mDrawerResult = new DrawerBuilder()
+                    .withActivity(this)
+                    .withAccountHeader(setupAccountHeader())
+                    .withToolbar(mToolbar)
+                    .addDrawerItems(mItemLogin, new DividerDrawerItem(), mItemHome,mItemSettings)
+                    .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+                        @Override
+                        public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+                            onNavDrawerItemSelected((int)drawerItem.getIdentifier());
+                            return true;
+                        }
+                    })
+                    .build();
+            mDrawerResult.deselect(mItemLogin.getIdentifier());
+        }else{
+            mCurrentProfile = checkCurrentProfileStatus();
+            mDrawerResult = new DrawerBuilder()
+                    .withActivity(this)
+                    .withAccountHeader(setupAccountHeader())
+                    .withToolbar(mToolbar)
+                    .addDrawerItems(mCurrentProfile, mItemLogout, new DividerDrawerItem(), mItemHome,mItemSettings)
+                    .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+                        @Override
+                        public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+                            onNavDrawerItemSelected((int)drawerItem.getIdentifier());
+                            return true;
+                        }
+                    })
+                    .build();
+        }
+        mDrawerResult.closeDrawer();
+    }
+
+    private void onNavDrawerItemSelected(int drawerItemIdentifier){
+        switch (drawerItemIdentifier){
+            //Sign In
+            case 3:
+                Toast.makeText(this, "Login menu selected", Toast.LENGTH_LONG).show();
+                startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder()
+                        .setAvailableProviders(Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
+                                new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build()))
+                        .setLogo(R.mipmap.ic_launcher_round)
+                        .setTosUrl(TOS_URL)
+                        .setPrivacyPolicyUrl(PP_URL)
+                        .setAllowNewEmailAccounts(true)
+                        .setIsSmartLockEnabled(true)
+                        .build(), RC_SIGN_IN);
+                break;
+            //Sign Out
+            case 4:
+                signOutUser();
+                Toast.makeText(this, "Logout menu selected", Toast.LENGTH_LONG).show();
+                break;
+            //Home
+            case 5:
+                Toast.makeText(this, "Home menu selected", Toast.LENGTH_LONG).show();
+                break;
+            //Settings
+            case 6:
+                Toast.makeText(this, "Settings menu selected", Toast.LENGTH_LONG).show();
+                break;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (RC_SIGN_IN == requestCode) {
+            IdpResponse response = IdpResponse.fromResultIntent(data);
+            // Successfully signed in
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(this, R.string.login_success, Toast.LENGTH_LONG).show();
+                signInUser();
+                return;
+            }else{
+                //User pressed back button
+                if (response == null) {
+                    Toast.makeText(this, R.string.login_failed, Toast.LENGTH_LONG).show();
+                    mDrawerResult.deselect(mItemLogin.getIdentifier());
+                    return;
+                }
+                //No internet connection.
+                if (response.getErrorCode() == ErrorCodes.NO_NETWORK) {
+                    Toast.makeText(this, R.string.no_connectivity, Toast.LENGTH_LONG).show();
+                    return;
+                }
+                //Unknown error
+                if (ErrorCodes.UNKNOWN_ERROR == response.getErrorCode()) {
+                    Toast.makeText(this, R.string.login_unknown_Error, Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+        }
+    }
+
+    private void refreshMenuHeader(){
+        mDrawerResult.closeDrawer();
+        mHeaderResult.clear();
+        setupProfileDrawer();
+        setupAccountHeader();
+        mDrawerResult.setHeader(mHeaderResult.getView());
+        mDrawerResult.resetDrawerContent();
+    }
+
+    private void signInUser(){
+        intstantiateUser();
+        if (!mFirebaseUser.isEmailVerified()){
+            //mFirebaseUser.sendEmailVerification();
+        }
+        mCurrentProfile = checkCurrentProfileStatus();
+        mDrawerResult.updateItemAtPosition(mCurrentProfile,1);
+        mDrawerResult.addItemAtPosition(mItemLogout,2);
+        mDrawerResult.deselect(mItemLogout.getIdentifier());
+        refreshMenuHeader();
+
+    }
+
+    private void signOutUser(){
+        //Sign out
+        mFirebaseAuth.signOut();
+        mFirebaseUser = mFirebaseAuth.getCurrentUser();
+        if (!isUserSignedIn()) {
+
+            mDrawerResult.updateItemAtPosition(mItemLogin,1);
+            mDrawerResult.removeItemByPosition(2);
+
+            mDrawerResult.deselect(mItemLogin.getIdentifier());
+            refreshMenuHeader();
+
+        }else{
+            //check if internet connectivity is there
+        }
     }
 
 }

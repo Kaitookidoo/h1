@@ -1,28 +1,31 @@
-package com.simcoder.uber;
+package com.taxi.myapp;
 
-import android.*;
 import android.Manifest;
+import android.app.Activity;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
-import android.location.LocationListener;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Looper;
-import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
-import android.util.Log;
-import android.view.MotionEvent;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RatingBar;
@@ -30,14 +33,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.firebase.geofire.GeoQuery;
 import com.firebase.geofire.GeoQueryEventListener;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesRepairableException;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.ErrorCodes;
+import com.firebase.ui.auth.IdpResponse;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -45,7 +48,6 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -56,16 +58,29 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.vision.text.Line;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.mikepenz.materialdrawer.AccountHeader;
+import com.mikepenz.materialdrawer.AccountHeaderBuilder;
+import com.mikepenz.materialdrawer.Drawer;
+import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.model.DividerDrawerItem;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.ProfileDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IProfile;
+import com.mikepenz.materialdrawer.util.AbstractDrawerImageLoader;
+import com.mikepenz.materialdrawer.util.DrawerImageLoader;
+import com.squareup.picasso.Picasso;
 
-import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +90,21 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     private GoogleMap mMap;
     Location mLastLocation;
     LocationRequest mLocationRequest;
+
+    private FirebaseAuth mAuth;
+    private DatabaseReference mCustomerDatabase;
+
+    private String userID;
+    private String mName="null";
+    private String mPhone="null";
+    private String mEmail="null";
+    private String mProfileImageUrl;
+    private EditText mNameField, mPhoneField;
+    private ImageView mProfileImage;
+
+    private Uri resultUri;
+
+    android.support.v7.widget.Toolbar toolbar;
 
     private FusedLocationProviderClient mFusedLocationClient;
 
@@ -100,7 +130,27 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
     private RadioGroup mRadioGroup;
 
+    private LinearLayout layout;
+
     private RatingBar mRatingBar;
+
+    private static final int RC_SIGN_IN = 0;
+
+    Dialog myDialog;
+
+
+    Toolbar mToolbar;
+    FirebaseAuth mFirebaseAuth;
+    FirebaseUser mFirebaseUser;
+    Drawer mDrawerResult;
+    AccountHeader mHeaderResult;
+    ProfileDrawerItem mProfileDrawerItem;
+    PrimaryDrawerItem mItemLogin, mItemLogout, mItemVerifiedProfile, mItemHome, mItemSettings, mItemUnverifiedProfile, mCurrentProfile;
+
+
+
+    private static final String PP_URL = "https://iteritory.com/msadrud/install-or-setup-apache-ignite-in-windows-step-by-step-tutorial/";
+    private static final String TOS_URL = "https://iteritory.com/msadrud/install-or-setup-apache-ignite-in-windows-step-by-step-tutorial/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,12 +176,55 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         mRatingBar = (RatingBar) findViewById(R.id.ratingBar);
 
         mRadioGroup = (RadioGroup) findViewById(R.id.radioGroup);
-        mRadioGroup.check(R.id.UberX);
+        mRadioGroup.check(R.id.mini);
 
         mLogout = (Button) findViewById(R.id.logout);
         mRequest = (Button) findViewById(R.id.request);
         mSettings = (Button) findViewById(R.id.settings);
         mHistory = (Button) findViewById(R.id.history);
+
+        layout = (LinearLayout) findViewById(R.id.linearlayout);
+        myDialog = new Dialog(this);
+
+
+
+        mAuth = FirebaseAuth.getInstance();
+        userID = mAuth.getCurrentUser().getUid();
+        mCustomerDatabase = FirebaseDatabase.getInstance().getReference().child("Users").child("Customers").child(userID);
+
+
+        DrawerImageLoader.init(new AbstractDrawerImageLoader() {
+            @Override
+            public void set(ImageView imageView, Uri uri, Drawable placeholder) {
+                super.set(imageView, uri, placeholder);
+                Picasso.with(imageView.getContext()).load(uri).placeholder(placeholder).into(imageView);
+            }
+            @Override
+            public void cancel(ImageView imageView) {
+
+                Picasso.with(imageView.getContext()).cancelRequest(imageView);
+            }
+        });
+
+        String UId=mAuth.getCurrentUser().getUid();
+
+        setupToolbar();
+
+        intstantiateUser();
+
+        instantiateMenuItems();
+        setupProfileDrawer();
+        setupNavigationDrawerWithHeader();
+
+
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
+        toolbar.setTitle("TAXI");
+
+
+
+
 
         mLogout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -216,6 +309,69 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         });
 
     }
+
+
+
+    public void ShowPopup(View v) {
+        TextView txtclose;
+        Button btnFollow;
+        final ListView listView;
+        final EditText editText;
+        final List<ChatModel> list_chat=new ArrayList<>();
+        FloatingActionButton btn_send_message;
+        myDialog.setContentView(R.layout.customercustompopup);
+        txtclose =(TextView) myDialog.findViewById(R.id.txtclose);
+        listView=(ListView)myDialog.findViewById(R.id.list_of_message);
+        editText=(EditText)myDialog.findViewById(R.id.user_message);
+        btn_send_message=(FloatingActionButton)myDialog.findViewById(R.id.fab);
+        txtclose.setText("M");
+
+        txtclose.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                myDialog.dismiss();
+            }
+        });
+
+        myDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        myDialog.show();
+        btn_send_message.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                DatabaseReference ref= FirebaseDatabase.getInstance().getReference().child("chat").child(userID).push();
+                String text=editText.getText().toString();;
+                ChatModel model=new ChatModel(text,true);
+
+                editText.setText("");
+                ref.setValue(model);
+            }
+        });
+        DatabaseReference refDatabase=FirebaseDatabase.getInstance().getReference().child("chat").child(userID);
+        refDatabase.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
+                ChatModel chat=dataSnapshot.getValue(ChatModel.class);
+                list_chat.add(chat);
+                CustomAdapter adapter=new CustomAdapter(list_chat,getApplicationContext());
+                listView.setAdapter(adapter);
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String prevChildKey) {}
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String prevChildKey) {}
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        });
+    }
+
+
+
     private int radius = 1;
     private Boolean driverFound = false;
     private String driverFoundID;
@@ -400,6 +556,12 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                         mRatingBar.setRating(ratingsAvg);
                     }
                 }
+                layout.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+
+                    }
+                });
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {
@@ -558,4 +720,267 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
             }
         }
     }
+
+
+
+    private void setupToolbar(){
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        mToolbar.setTitle("TAXI");
+
+
+    }
+
+    private void intstantiateUser(){
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        mFirebaseUser = mFirebaseAuth.getCurrentUser();
+    }
+
+    private boolean isUserSignedIn(){
+        if (mFirebaseUser == null){
+            return false;
+        }else{
+            return true;
+        }
+    }
+
+    private PrimaryDrawerItem checkCurrentProfileStatus(){
+        if (mFirebaseUser.isEmailVerified()){
+            mCurrentProfile = new PrimaryDrawerItem().withIdentifier(2).withName(R.string.verified_profile).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));;
+        }else{
+            mCurrentProfile = new PrimaryDrawerItem().withIdentifier(2).withName(R.string.unverified_profile).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        }
+        return mCurrentProfile;
+    }
+
+    private void instantiateMenuItems(){
+        mItemVerifiedProfile = new PrimaryDrawerItem().withIdentifier(1).withName(R.string.verified_profile).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        mItemUnverifiedProfile = new PrimaryDrawerItem().withIdentifier(2).withName(R.string.unverified_profile).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+
+        mItemLogin = new PrimaryDrawerItem().withIdentifier(3).withName(R.string.login_menu_item).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        mItemLogout = new PrimaryDrawerItem().withIdentifier(4).withName(R.string.logout_menu_item).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));;
+
+        mItemHome = new PrimaryDrawerItem().withIdentifier(5).withName(R.string.settings).withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        mItemSettings = new PrimaryDrawerItem().withIdentifier(6).withName("history").withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+    }
+
+    private void setupProfileDrawer() {
+        //check if the user is logged in. If logged in, get details (name, email, pic etc) dynamically
+        //For demonstration purpose, I have set a personal photo hard coded. In real-time, we can easily
+        // pass the actual photo dynamically.
+        mAuth = FirebaseAuth.getInstance();
+        userID = mAuth.getCurrentUser().getUid();
+        mCustomerDatabase = FirebaseDatabase.getInstance().getReference().child("Users").child("Customers").child(userID);
+
+        mCustomerDatabase.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists() && dataSnapshot.getChildrenCount()>0){
+                    Map<String, Object> map = (Map<String, Object>) dataSnapshot.getValue();
+                    if(map.get("name")!=null){
+                        mName = map.get("name").toString();
+
+                    }
+                    if(map.get("phone")!=null){
+                        mPhone = map.get("phone").toString();
+
+                    }
+                    if(map.get("profileImageUrl")!=null){
+                       mProfileImageUrl = map.get("profileImageUrl").toString();
+
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+            }
+        });
+       /* if (mFirebaseUser != null) {
+            Uri xx;
+            if(mProfileImageUrl!=null){
+            xx =Uri.parse(mProfileImageUrl);}else{xx=FirebaseAuth.getInstance().getCurrentUser().getPhotoUrl();}
+            mProfileDrawerItem = new ProfileDrawerItem()
+                    .withName(mName)
+                    .withEmail(mFirebaseUser.getEmail())
+                    .withIcon(xx);
+        } else {//else if the user is not logged in, show a default icon
+            mProfileDrawerItem = new ProfileDrawerItem()
+                    .withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        }*/
+        if (mFirebaseUser != null) {
+            Uri xx = FirebaseAuth.getInstance().getCurrentUser().getPhotoUrl();
+            mProfileDrawerItem = new ProfileDrawerItem()
+                    .withName(mFirebaseUser.getDisplayName())
+                    .withEmail(mFirebaseUser.getEmail())
+                    .withIcon(xx);
+        } else {//else if the user is not logged in, show a default icon
+            mProfileDrawerItem = new ProfileDrawerItem()
+                    .withIcon(getResources().getDrawable(R.mipmap.ic_launcher_round));
+        }
+    }
+
+    private AccountHeader setupAccountHeader(){
+        mHeaderResult = new AccountHeaderBuilder()
+                .withActivity(this)
+                .withHeaderBackground(R.drawable.header)
+                .addProfiles(mProfileDrawerItem)
+                .withOnAccountHeaderListener(new AccountHeader.OnAccountHeaderListener() {
+                    @Override
+                    public boolean onProfileChanged(View view, IProfile profile, boolean currentProfile) {
+                        return false;
+                    }
+                }).withSelectionListEnabledForSingleProfile(false)
+                .build();
+        return mHeaderResult;
+    }
+
+    private void setupNavigationDrawerWithHeader(){
+        //Depending on user is logged in or not, decide whether to show Log In menu or Log Out menu
+        if (!isUserSignedIn()){
+            mDrawerResult = new DrawerBuilder()
+                    .withActivity(this)
+                    .withAccountHeader(setupAccountHeader())
+                    .withToolbar(mToolbar)
+                    .addDrawerItems(mItemLogin, new DividerDrawerItem(), mItemHome,mItemSettings)
+                    .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+                        @Override
+                        public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+                            onNavDrawerItemSelected((int)drawerItem.getIdentifier());
+                            return true;
+                        }
+                    })
+                    .build();
+            mDrawerResult.deselect(mItemLogin.getIdentifier());
+        }else{
+            mCurrentProfile = checkCurrentProfileStatus();
+            mDrawerResult = new DrawerBuilder()
+                    .withActivity(this)
+                    .withAccountHeader(setupAccountHeader())
+                    .withToolbar(mToolbar)
+                    .addDrawerItems(mCurrentProfile, mItemLogout, new DividerDrawerItem(), mItemHome,mItemSettings)
+                    .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+                        @Override
+                        public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+                            onNavDrawerItemSelected((int)drawerItem.getIdentifier());
+                            return true;
+                        }
+                    })
+                    .build();
+        }
+        mDrawerResult.closeDrawer();
+    }
+
+    private void onNavDrawerItemSelected(int drawerItemIdentifier){
+        switch (drawerItemIdentifier){
+            //Sign In
+            case 3:
+                Toast.makeText(this, "Login menu selected", Toast.LENGTH_LONG).show();
+                startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder()
+                        .setAvailableProviders(Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
+                                new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build()))
+                        .setLogo(R.mipmap.ic_launcher_round)
+                        .setTosUrl(TOS_URL)
+                        .setPrivacyPolicyUrl(PP_URL)
+                        .setAllowNewEmailAccounts(true)
+                        .setIsSmartLockEnabled(true)
+                        .build(), RC_SIGN_IN);
+                break;
+            //Sign Out
+            case 4:
+                //signOutUser();
+                FirebaseAuth.getInstance().signOut();
+                Intent intent1 = new Intent(CustomerMapActivity.this, MainActivity.class);
+                startActivity(intent1);
+                finish();
+
+                Toast.makeText(this, "Logout menu selected", Toast.LENGTH_LONG).show();
+                break;
+            //Home
+            case 5:
+                Intent intent2 = new Intent(CustomerMapActivity.this, CustomerSettingsActivity.class);
+                startActivity(intent2);
+                Toast.makeText(this, "Home menu selected", Toast.LENGTH_LONG).show();
+                break;
+            //Settings
+            case 6:
+                Intent intent = new Intent(CustomerMapActivity.this, HistoryActivity.class);
+                intent.putExtra("customerOrDriver", "Customers");
+                startActivity(intent);
+                Toast.makeText(this, "Settings menu selected", Toast.LENGTH_LONG).show();
+                break;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (RC_SIGN_IN == requestCode) {
+            IdpResponse response = IdpResponse.fromResultIntent(data);
+            // Successfully signed in
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(this, R.string.login_success, Toast.LENGTH_LONG).show();
+                //signInUser();
+                return;
+            }else{
+                //User pressed back button
+                if (response == null) {
+                    Toast.makeText(this, R.string.login_failed, Toast.LENGTH_LONG).show();
+                    mDrawerResult.deselect(mItemLogin.getIdentifier());
+                    return;
+                }
+                //No internet connection.
+                if (response.getErrorCode() == ErrorCodes.NO_NETWORK) {
+                    Toast.makeText(this, R.string.no_connectivity, Toast.LENGTH_LONG).show();
+                    return;
+                }
+                //Unknown error
+                if (ErrorCodes.UNKNOWN_ERROR == response.getErrorCode()) {
+                    Toast.makeText(this, R.string.login_unknown_Error, Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+        }
+        if(requestCode == 1 && resultCode == Activity.RESULT_OK){
+            final Uri imageUri = data.getData();
+            resultUri = imageUri;
+            mProfileImage.setImageURI(resultUri);}
+    }
+
+    private void refreshMenuHeader(){
+        mDrawerResult.closeDrawer();
+        mHeaderResult.clear();
+        setupProfileDrawer();
+        setupAccountHeader();
+        mDrawerResult.setHeader(mHeaderResult.getView());
+        mDrawerResult.resetDrawerContent();
+    }
+
+    /*private void signInUser(){
+        intstantiateUser();
+        if (!mFirebaseUser.isEmailVerified()){
+            //mFirebaseUser.sendEmailVerification();
+        }
+        mCurrentProfile = checkCurrentProfileStatus();
+        mDrawerResult.updateItemAtPosition(mCurrentProfile,1);
+        mDrawerResult.addItemAtPosition(mItemLogout,2);
+        mDrawerResult.deselect(mItemLogout.getIdentifier());
+        refreshMenuHeader();
+
+    }
+
+    private void signOutUser(){
+        //Sign out
+        mFirebaseAuth.signOut();
+        mFirebaseUser = mFirebaseAuth.getCurrentUser();
+        if (!isUserSignedIn()) {
+
+            mDrawerResult.updateItemAtPosition(mItemLogin,1);
+            mDrawerResult.removeItemByPosition(2);
+
+            mDrawerResult.deselect(mItemLogin.getIdentifier());
+            refreshMenuHeader();
+
+        }else{
+            //check if internet connectivity is there
+        }
+    }*/
 }
