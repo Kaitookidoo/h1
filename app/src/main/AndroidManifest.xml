@@ -19,16 +19,21 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <service android:name="com.taxi.myapp.onAppKilled" android:stopWithTask="false"/>
-        <activity android:name="com.taxi.myapp.MainActivity">
+        <service
+            android:name=".onAppKilled"
+            android:stopWithTask="false" />
+
+        <activity android:name=".IntroActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.taxi.myapp.DriverLoginActivity" />
-        <activity android:name="com.taxi.myapp.CustomerLoginActivity" />
+        <activity android:name=".MainActivity" />
+        <activity android:name=".Driver.DriverLoginActivity" />
+        <activity android:name=".Customer.CustomerLoginActivity" />
+
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -42,13 +47,17 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name="com.taxi.myapp.DriverMapActivity"
+            android:name=".Driver.DriverMapActivity"
             android:label="@string/title_activity_driver_map" />
-        <activity android:name="com.taxi.myapp.CustomerMapActivity" />
-        <activity android:name="com.taxi.myapp.CustomerSettingsActivity" />
-        <activity android:name="com.taxi.myapp.DriverSettingsActivity" />
-        <activity android:name="com.taxi.myapp.HistoryActivity" />
-        <activity android:name="com.taxi.myapp.HistorySingleActivity"></activity>
+        <activity android:name=".Customer.CustomerMapActivity" >
+
+        </activity>
+        <activity android:name=".Customer.CustomerSettingsActivity" />
+        <activity android:name=".Driver.DriverSettingsActivity" />
+        <activity android:name=".ShowHistory.HistoryActivity" />
+        <activity android:name=".ShowHistory.HistorySingleActivity" />
+        <activity android:name=".Customer.RegisterUser.SignUpActivity" />
+        <activity android:name=".Customer.RegisterUser.GoogleSignIn"></activity>
     </application>
 
 </manifest>

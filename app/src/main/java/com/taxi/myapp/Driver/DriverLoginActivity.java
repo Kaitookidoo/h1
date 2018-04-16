@@ -1,4 +1,4 @@
-package com.taxi.myapp;
+package com.taxi.myapp.Driver;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -27,6 +27,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.taxi.myapp.R;
 
 public class DriverLoginActivity extends AppCompatActivity {
     private EditText mEmail, mPassword;
@@ -43,6 +44,7 @@ public class DriverLoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_driver_login);
         getWindow().setBackgroundDrawableResource(R.drawable.background);
 

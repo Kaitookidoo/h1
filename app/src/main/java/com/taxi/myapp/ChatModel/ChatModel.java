@@ -1,4 +1,4 @@
-package com.taxi.myapp;
+package com.taxi.myapp.ChatModel;
 
 /**
  * Created by elega on 07-04-2018.

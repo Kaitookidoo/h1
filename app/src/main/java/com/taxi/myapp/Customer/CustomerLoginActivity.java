@@ -1,4 +1,4 @@
-package com.taxi.myapp;
+package com.taxi.myapp.Customer;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -26,8 +26,15 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.taxi.myapp.Customer.RegisterUser.SignUpActivity;
+import com.taxi.myapp.R;
+
+import java.util.Map;
 
 public class CustomerLoginActivity extends AppCompatActivity {
 
@@ -48,7 +55,7 @@ public class CustomerLoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_customer_login);
-        getWindow().setBackgroundDrawableResource(R.drawable.background);
+        getWindow().setBackgroundDrawableResource(R.drawable.backgroun1);
 
         mAuth = FirebaseAuth.getInstance();
         mGoogleBtn=(SignInButton)findViewById(R.id.sign_in_button);
@@ -57,10 +64,34 @@ public class CustomerLoginActivity extends AppCompatActivity {
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                 if(user!=null){
-                    Intent intent = new Intent(CustomerLoginActivity.this, CustomerMapActivity.class);
-                    startActivity(intent);
-                    finish();
-                    return;
+                    mAuth = FirebaseAuth.getInstance();
+                    final String userID = mAuth.getCurrentUser().getUid();
+                    DatabaseReference database=FirebaseDatabase.getInstance().getReference().child("Users").child("Customers");
+                    DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
+                    database.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot snapshot) {
+                            if (snapshot.hasChild(userID)) {
+                                // run some code
+                                Intent intent = new Intent(CustomerLoginActivity.this, GoogleSignIn.class);
+                                startActivity(intent);
+                                finish();
+                            }
+                            else
+                            {
+                                Intent intent = new Intent(CustomerLoginActivity.this, CustomerMapActivity.class);
+                                startActivity(intent);
+                                finish();
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+                    Log.d("userid", "onAuthStateChanged: "+userID);
+
                 }
             }
         };
@@ -97,7 +128,9 @@ public class CustomerLoginActivity extends AppCompatActivity {
 
                 final String email = mEmail.getText().toString();
                 final String password = mPassword.getText().toString();
-                mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(CustomerLoginActivity.this, new OnCompleteListener<AuthResult>() {
+                Intent intent = new Intent(CustomerLoginActivity.this, SignUpActivity.class);
+                startActivity(intent);
+               /* mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(CustomerLoginActivity.this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if(!task.isSuccessful()){
@@ -108,7 +141,7 @@ public class CustomerLoginActivity extends AppCompatActivity {
                             current_user_db.setValue(true);
                         }
                     }
-                });
+                });*/
             }
         });
 

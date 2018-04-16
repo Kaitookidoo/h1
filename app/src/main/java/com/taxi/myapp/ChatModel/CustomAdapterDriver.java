@@ -1,4 +1,4 @@
-package com.taxi.myapp;
+package com.taxi.myapp.ChatModel;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
 import com.github.library.bubbleview.BubbleTextView;
+import com.taxi.myapp.R;
 
 import java.util.List;
 

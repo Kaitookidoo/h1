@@ -8,4 +8,23 @@
     <color name="endblue">#0bcce6</color>
     <color name="startblue">#09c6df</color>
     <color name="blue">#0bcce6</color>
+    <!-- Screens background -->
+    <color name="bg_screen1">#b12515</color>
+    <color name="bg_screen2">#FFBB00</color>
+    <color name="bg_screen3">#74a443</color>
+
+    <!-- dots active colors -->
+    <color name="dot_active">#000000</color>
+    <color name="primary_darker">#CC1D1D</color>
+    <color name="black">#000000</color>
+    <color name="jet">#222222</color>
+    <color name="oil">#333333</color>
+    <color name="monsoon">#777777</color>
+    <color name="jumbo">#888888</color>
+    <color name="aluminum">#999999</color>
+    <color name="base">#AAAAAA</color>
+    <color name="iron">#CCCCCC</color>
+
+    <!-- dots inactive colors -->
+    <color name="dot_inactive">#cccccc</color>
 </resources>

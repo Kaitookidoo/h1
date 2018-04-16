@@ -1,4 +1,4 @@
-package com.taxi.myapp;
+package com.taxi.myapp.Driver;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -77,6 +77,11 @@ import com.mikepenz.materialdrawer.model.interfaces.IProfile;
 import com.mikepenz.materialdrawer.util.AbstractDrawerImageLoader;
 import com.mikepenz.materialdrawer.util.DrawerImageLoader;
 import com.squareup.picasso.Picasso;
+import com.taxi.myapp.ChatModel.ChatModel;
+import com.taxi.myapp.ChatModel.CustomAdapterDriver;
+import com.taxi.myapp.ShowHistory.HistoryActivity;
+import com.taxi.myapp.MainActivity;
+import com.taxi.myapp.R;
 
 import java.util.ArrayList;
 import java.util.Arrays;

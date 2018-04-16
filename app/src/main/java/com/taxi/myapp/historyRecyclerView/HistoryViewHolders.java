@@ -6,7 +6,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
 
-import com.taxi.myapp.HistorySingleActivity;
+import com.taxi.myapp.ShowHistory.HistorySingleActivity;
 import com.taxi.myapp.R;
 
 /**

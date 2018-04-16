@@ -1,4 +1,4 @@
-package com.taxi.myapp;
+package com.taxi.myapp.PaymentMethods;
 
 /**
  * Created by elega on 01-03-2018.

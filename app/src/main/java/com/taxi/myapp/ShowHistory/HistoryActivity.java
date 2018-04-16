@@ -1,4 +1,4 @@
-package com.taxi.myapp;
+package com.taxi.myapp.ShowHistory;
 
 import android.annotation.SuppressLint;
 import android.support.v7.app.AppCompatActivity;
@@ -15,6 +15,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.taxi.myapp.R;
 import com.taxi.myapp.historyRecyclerView.HistoryAdapter;
 import com.taxi.myapp.historyRecyclerView.HistoryObject;
 

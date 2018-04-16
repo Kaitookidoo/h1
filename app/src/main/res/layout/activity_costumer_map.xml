@@ -4,12 +4,16 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
 
-    tools:context="com.taxi.myapp.CustomerMapActivity" >
+    tools:context="com.taxi.myapp.Customer.CustomerMapActivity" >
 
     <android.support.v7.widget.Toolbar
         android:layout_height="?attr/actionBarSize"
         android:layout_width="match_parent"
-        android:id="@+id/toolbar" ></android.support.v7.widget.Toolbar>
+        android:id="@+id/toolbar"
+        android:background="@drawable/toolbar"
+        >
+
+    </android.support.v7.widget.Toolbar>
 
     <fragment
         android:id="@+id/map"
@@ -132,6 +136,7 @@
         <LinearLayout
             android:background="@android:color/white"
             android:orientation="vertical"
+            android:backgroundTint="@color/blue"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
             <RadioGroup
@@ -142,18 +147,18 @@
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="mini"
-                    android:id="@+id/mini"/>
+                    android:text="Mini"
+                    android:id="@+id/Mini"/>
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="micro"
-                    android:id="@+id/micro"/>
+                    android:text="Micro"
+                    android:id="@+id/Micro"/>
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="prime"
-                    android:id="@+id/prime"/>
+                    android:text="Prime"
+                    android:id="@+id/Prime"/>
             </RadioGroup>
 
             <Button
@@ -161,6 +166,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="CALL TAXI"
+                android:background="@drawable/buttonstyleithgradient"
                 android:id="@+id/request"/>
         </LinearLayout>
     </LinearLayout>

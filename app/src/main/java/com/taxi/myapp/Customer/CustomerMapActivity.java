@@ -1,4 +1,4 @@
-package com.taxi.myapp;
+package com.taxi.myapp.Customer;
 
 import android.Manifest;
 import android.app.Activity;
@@ -14,12 +14,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -33,7 +35,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.firebase.geofire.GeoQuery;
@@ -78,11 +79,17 @@ import com.mikepenz.materialdrawer.model.interfaces.IProfile;
 import com.mikepenz.materialdrawer.util.AbstractDrawerImageLoader;
 import com.mikepenz.materialdrawer.util.DrawerImageLoader;
 import com.squareup.picasso.Picasso;
+import com.taxi.myapp.ChatModel.ChatModel;
+import com.taxi.myapp.ChatModel.CustomAdapter;
+import com.taxi.myapp.ShowHistory.HistoryActivity;
+import com.taxi.myapp.MainActivity;
+import com.taxi.myapp.R;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class CustomerMapActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -148,7 +155,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     PrimaryDrawerItem mItemLogin, mItemLogout, mItemVerifiedProfile, mItemHome, mItemSettings, mItemUnverifiedProfile, mCurrentProfile;
 
 
-
+    private TextToSpeech mTTS;
     private static final String PP_URL = "https://iteritory.com/msadrud/install-or-setup-apache-ignite-in-windows-step-by-step-tutorial/";
     private static final String TOS_URL = "https://iteritory.com/msadrud/install-or-setup-apache-ignite-in-windows-step-by-step-tutorial/";
 
@@ -176,7 +183,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         mRatingBar = (RatingBar) findViewById(R.id.ratingBar);
 
         mRadioGroup = (RadioGroup) findViewById(R.id.radioGroup);
-        mRadioGroup.check(R.id.mini);
+        mRadioGroup.check(R.id.Mini);
 
         mLogout = (Button) findViewById(R.id.logout);
         mRequest = (Button) findViewById(R.id.request);
@@ -220,7 +227,8 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 
-        toolbar.setTitle("TAXI");
+
+
 
 
 
@@ -346,6 +354,45 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                 ref.setValue(model);
             }
         });
+        mTTS = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    int result = mTTS.setLanguage(Locale.ENGLISH);
+
+                    if (result == TextToSpeech.LANG_MISSING_DATA
+                            || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        Log.e("TTS", "Language not supported");
+                    } else {
+
+                    }
+                } else {
+                    Log.e("TTS", "Initialization failed");
+                }
+            }
+        });
+        btn_send_message.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                DatabaseReference ref= FirebaseDatabase.getInstance().getReference().child("chat").child(userID).push();
+                String text=editText.getText().toString();;
+                ChatModel model=new ChatModel(text,true);
+
+
+                float pitch = (float) 30 / 50;
+                if (pitch < 0.1) pitch = 0.1f;
+                float speed = (float) 30 / 50;
+                if (speed < 0.1) speed = 0.1f;
+
+                mTTS.setPitch(pitch);
+                mTTS.setSpeechRate(speed);
+
+                mTTS.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+                editText.setText("");
+                ref.setValue(model);
+                return false;
+            }
+        });
         DatabaseReference refDatabase=FirebaseDatabase.getInstance().getReference().child("chat").child(userID);
         refDatabase.addChildEventListener(new ChildEventListener() {
             @Override
@@ -371,6 +418,16 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     }
 
 
+    @Override
+    protected void onDestroy() {
+        if (mTTS != null) {
+            mTTS.stop();
+            mTTS.shutdown();
+        }
+
+        super.onDestroy();
+    }
+
 
     private int radius = 1;
     private Boolean driverFound = false;
@@ -383,11 +440,12 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         GeoFire geoFire = new GeoFire(driverLocation);
         geoQuery = geoFire.queryAtLocation(new GeoLocation(pickupLocation.latitude, pickupLocation.longitude), radius);
         geoQuery.removeAllListeners();
-
+        Log.d("error", "getClosestDriver: " );
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
                 if (!driverFound && requestBol){
+                    Log.d("key" , "onKeyEntered: "+key );
                     DatabaseReference mCustomerDatabase = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(key);
                     mCustomerDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
@@ -401,7 +459,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                                 if(driverMap.get("service").equals(requestService)){
                                     driverFound = true;
                                     driverFoundID = dataSnapshot.getKey();
-
+                                    Log.d("driver", "driverFoundid: "+driverFoundID);
                                     DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverFoundID).child("customerRequest");
                                     String customerId = FirebaseAuth.getInstance().getCurrentUser().getUid();
                                     HashMap map = new HashMap();
@@ -656,7 +714,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         mMap.setMyLocationEnabled(true);
     }
 
-    LocationCallback mLocationCallback = new LocationCallback(){
+    private final LocationCallback mLocationCallback = new LocationCallback(){
         @Override
         public void onLocationResult(LocationResult locationResult) {
             for(Location location : locationResult.getLocations()){
@@ -667,6 +725,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
                     mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
+                    Log.v("location", "IN ON LOCATION CHANGE, lat=" + location.getLatitude() + ", lon=" + location.getLongitude());
                 }
             }
         }
@@ -943,6 +1002,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
             final Uri imageUri = data.getData();
             resultUri = imageUri;
             mProfileImage.setImageURI(resultUri);}
+
     }
 
     private void refreshMenuHeader(){
